@@ -1,0 +1,120 @@
+const express = require('express');
+const axios = require('axios');
+const fs = require('fs');
+const FormData = require('form-data');
+const app = express();
+app.use(express.json());
+
+// DocuClipper API details
+const uploadUrl = 'https://www.docuclipper.com/api/v1/protected/document?asyncProcessing=false';
+const jobUrl = 'https://www.docuclipper.com/api/v1/protected/job';
+const jobStatusUrl = 'https://www.docuclipper.com/api/v1/protected/job'; // Base URL for 3rd API
+const apiKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoiMTAwMjY2IiwiZW1haWwiOiJ2a2RlbDAwMUBnbWFpbC5jb20iLCJmaXJzdE5hbWUiOiJWaWthcyIsImxhc3ROYW1lIjoiS2hhbm5hIiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0llM3JkSV9Qb1M4VWhYMnE2Y240NzlSY2hseHhIb1dyRE9iMHY2ZzJqZVhHNUJidz1zNTAtbW8iLCJwZXJtaXNzaW9ucyI6WyJNQU5BR0VfVEVNUExBVEVTIiwiTUFOQUdFX0lOVEVHUkFUSU9OUyIsIlJFQURfSk9CX1JFU1VMVFMiLCJDUkVBVEVfSk9CIiwiVVNFX09DUl9UT09MIiwiVVNFX09DUl9UQUJMRVNfVE9PTCIsIlVTRV9UQUJMRVNfVE9PTCIsIlVTRV9IQU5EV1JJVElOR19UT09MIl0sInBsYW5OYW1lIjoiQnVzaW5lc3NUcmlhbCIsImJpbGxpbmdDeWNsZSI6Ik1vbnRobHkiLCJpc1NlYXQiOmZhbHNlLCJpYXQiOjE3MzQ0NTExNDgsImV4cCI6NDg5MDIxMTE0OH0.hkhW4va8bRuE1Ly6ZSvJrNH4cLYZoP3Z_8CBIPi9DkQ'; // Replace with your actual API key
+
+// Endpoint to handle the entire flow
+app.post('/process-file', async (req, res) => {
+  try {
+    // Step 1: Get the dynamic URL from Clappia
+    const fileUrl = req.body.fileUrl; // Assumes Clappia sends { "fileUrl": "..." }
+    console.log('Received file URL:', fileUrl);
+
+    // Step 2: Define the local path to save the downloaded file
+    const downloadPath = './temp-file.pdf'; // Save it temporarily
+
+    // Step 3: Download the file using Axios
+    console.log('Downloading the file...');
+    const response = await axios({
+      method: 'get',
+      url: fileUrl,
+      responseType: 'stream',
+    });
+
+    // Save the file locally
+    const writer = fs.createWriteStream(downloadPath);
+    response.data.pipe(writer);
+
+    writer.on('finish', async () => {
+      console.log('File downloaded successfully.');
+
+      // Step 4: Upload the file to DocuClipper
+      const form = new FormData();
+      form.append('document', fs.createReadStream(downloadPath));
+
+      console.log('Uploading the file to DocuClipper...');
+      const uploadResponse = await axios.post(uploadUrl, form, {
+        headers: {
+          ...form.getHeaders(),
+          Authorization: `Bearer ${apiKey}`,
+        },
+      });
+
+      console.log('File uploaded successfully:', uploadResponse.data);
+
+      // Extract the document ID from the upload response
+      const documentId = uploadResponse.data.document.id;
+      console.log('Extracted document ID:', documentId);
+
+      // Step 5: Call the second API with the document ID
+      const jobPayload = {
+        templateId: null,
+        documents: [documentId], // Use the document ID here
+        documentsToSplit: [],
+        enableMultiPage: false,
+        jobName: "",
+        jobType: "Invoice",
+        selectedTemplateFields: null,
+        isGeneric: false,
+        enableBankMode: true,
+      };
+
+      console.log('Submitting job to DocuClipper...');
+      const jobResponse = await axios.post(jobUrl, jobPayload, {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log('Job submitted successfully:', jobResponse.data);
+
+      // Extract the Job ID from the job response
+      const jobId = jobResponse.data.id;
+      console.log('Extracted Job ID:', jobId);
+
+      // Step 6: Call the third API to fetch the job status
+      console.log('Fetching job status from DocuClipper...');
+      const jobStatusResponse = await axios.get(`${jobStatusUrl}/${jobId}`, {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+        },
+      });
+
+      console.log('Job status fetched successfully:', jobStatusResponse.data);
+
+      // Respond back to Clappia with the entire flow results
+      res.status(200).json({
+        message: 'File processed, job submitted, and status fetched successfully',
+        documentId,
+        jobId,
+        jobStatus: jobStatusResponse.data,
+      });
+
+      // Optional: Clean up the local file
+      fs.unlinkSync(downloadPath);
+    });
+
+    writer.on('error', (err) => {
+      console.error('Error writing file:', err.message);
+      res.status(500).json({ error: 'Failed to download file' });
+    });
+  } catch (error) {
+    console.error('Error processing file:', error.message);
+    res.status(500).json({ error: 'An error occurred', details: error.message });
+  }
+});
+
+// Start the server
+const PORT = 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
