@@ -11,7 +11,7 @@ const uploadUrl = 'https://www.docuclipper.com/api/v1/protected/document?asyncPr
 const jobUrl = 'https://www.docuclipper.com/api/v1/protected/job';
 const jobStatusUrl = 'https://www.docuclipper.com/api/v1/protected/job';
 const jobExportUrl = 'https://www.docuclipper.com/api/v1/protected/job';
-const apiKey = const apiKey = process.env.API_KEY;
+const apiKey =  process.env.API_KEY;
 
 // Helper function to wait for a specific time
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
