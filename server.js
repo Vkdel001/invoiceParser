@@ -11,7 +11,7 @@ const uploadUrl = 'https://www.docuclipper.com/api/v1/protected/document?asyncPr
 const jobUrl = 'https://www.docuclipper.com/api/v1/protected/job';
 const jobStatusUrl = 'https://www.docuclipper.com/api/v1/protected/job';
 const jobExportUrl = 'https://www.docuclipper.com/api/v1/protected/job';
-const apiKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoiMTAwMjY2IiwiZW1haWwiOiJ2a2RlbDAwMUBnbWFpbC5jb20iLCJmaXJzdE5hbWUiOiJWaWthcyIsImxhc3ROYW1lIjoiS2hhbm5hIiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0llM3JkSV9Qb1M4VWhYMnE2Y240NzlSY2hseHhIb1dyRE9iMHY2ZzJqZVhHNUJidz1zNTAtbW8iLCJwZXJtaXNzaW9ucyI6WyJNQU5BR0VfVEVNUExBVEVTIiwiTUFOQUdFX0lOVEVHUkFUSU9OUyIsIlJFQURfSk9CX1JFU1VMVFMiLCJDUkVBVEVfSk9CIiwiVVNFX09DUl9UT09MIiwiVVNFX09DUl9UQUJMRVNfVE9PTCIsIlVTRV9UQUJMRVNfVE9PTCIsIlVTRV9IQU5EV1JJVElOR19UT09MIl0sInBsYW5OYW1lIjoiQnVzaW5lc3NUcmlhbCIsImJpbGxpbmdDeWNsZSI6Ik1vbnRobHkiLCJpc1NlYXQiOmZhbHNlLCJpYXQiOjE3MzQ0NTExNDgsImV4cCI6NDg5MDIxMTE0OH0.hkhW4va8bRuE1Ly6ZSvJrNH4cLYZoP3Z_8CBIPi9DkQ'; // Replace with your actual API key
+const apiKey = const apiKey = process.env.API_KEY;
 
 // Helper function to wait for a specific time
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
