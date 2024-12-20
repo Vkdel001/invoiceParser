@@ -18,6 +18,7 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Endpoint to handle the entire flow
 app.post('/process-file', async (req, res) => {
+  console.log('Request received:', req.body);
   try {
     const fileUrl = req.body.fileUrl;
     console.log('Received file URL:', fileUrl);
